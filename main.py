@@ -3,10 +3,9 @@ import sys
 
 def find_srr(dna_sequence):
     """
-    function receives a dna sequence (str), and prints a list of tuple
-    containing the repeat sequence (str) and amount of repeats (int)
-    :param dna_sequence:
-    :return:
+     and amount of repeats (int)
+    :param dna_sequence: function receives a dna sequence (str) containing the repeat sequence
+    :return: list of tuple containing all repeated sequences and amount (str, int)
     """
     # receive list of all sub elements in the string
     list_of_subs = find_all_subs(dna_sequence)
@@ -14,7 +13,9 @@ def find_srr(dna_sequence):
     list_of_repeat = []
     # send each substring to the max_repeating function
     for sub in list_of_subs:
+        # value is the max value of repeated element
         value = max_repeating(dna_sequence, sub)
+        # only take value above 3
         if value >= 3:
             list_of_repeat.append((sub, value))
     lst = len(list_of_repeat)
@@ -24,30 +25,42 @@ def find_srr(dna_sequence):
                 temp = list_of_repeat[j]
                 list_of_repeat[j] = list_of_repeat[j + 1]
                 list_of_repeat[j + 1] = temp
+    # if list is empty, meaning no repeat elements
     if not list_of_repeat:
         return None
+    # return list of tuple
     return list_of_repeat
 
 
 def find_all_subs(dna_sequence):
+    """
+    function that finds all sub elements in a given sequence
+    :param dna_sequence: given sequence (str) we wish to find repeats in
+    :return: list of all possible sub elements [(str)]
+    """
     lookup = []
     n = len(dna_sequence)
     for i in range(1, 6):
         for j in range(i, n + 1):
+            # if this sub element isnt in lookup-add it
             if dna_sequence[j - i:j] not in lookup:
                 lookup.append(dna_sequence[j - i:j])
     return lookup
 
 
-def max_repeating(sequence, sub_string):
-    # Stores the count of consecutive
-    # occurrences of str2 in str1
-    count_occurrences = sequence.count(sub_string)
-    # Concatenate str2 cntOcc times
+def max_repeating(dna_sequence, sub_string):
+    """
+    returns the max value of each repeating element
+    :param dna_sequence: given sequence (str) we wish to find repeats in
+    :param sub_string: current sub string (str) we are working on
+    :return: amount of consecutive repeats (int) this substring has
+    """
+    count_occurrences = dna_sequence.count(sub_string)
+    # Concatenate sub_string count_occurrences times
     concat = sub_string * count_occurrences
-    # Iterate over the string str1
-    # while Contstr is not present in str1
-    while concat not in sequence:
+    # Iterate over the string dna_sequences
+    # while concat is not present in dna_sequence
+    while concat not in dna_sequence:
         # Update count_occurrences
         count_occurrences -= 1
         # Update concat
@@ -56,6 +69,12 @@ def max_repeating(sequence, sub_string):
 
 
 def reverse_transcribe(rna_seq):
+    """
+    function reverses a given str of rna bases
+    and converts to dna
+    :param rna_seq: RNA sequence (str) we want ot reverse_transcribe
+    :return: reversed transcribed DNA sequence (str)
+    """
     dna_seq = []
     for base in rna_seq.upper():
         if base == 'A':
@@ -68,26 +87,36 @@ def reverse_transcribe(rna_seq):
             dna_seq.append('G')
     dna_seq.reverse()
     dna_seq_comp = ""
-    for char in dna_seq:
-        dna_seq_comp += char
+    for base in dna_seq:
+        dna_seq_comp += base
     return dna_seq_comp
 
 
 def translate(rna_seq, reading_frame):
+    """
+    translate given rna sequence into an aminoacid sequence
+    :param rna_seq: rna sequence we want to translate (str)
+    :param reading_frame: reading frame we want to translate (int)
+    :return: an amino acid sequence (str)
+    """
     dna_seq = []
+    # convert all Uracil bases to Thymine
     for base in rna_seq.upper():
         if base == 'U':
             dna_seq.append('T')
         else:
             dna_seq.append(base)
+    # create translated sequence string
     rna_seq_t = ""
     for base in dna_seq:
         rna_seq_t += base
+    # take into consideration reading frame
     reading = rna_seq_t[reading_frame - 1:]
     if len(reading) % 3 == 1:
         reading = reading[:-1]
     elif len(reading) % 3 == 2:
         reading = reading[:-2]
+    # table of amino acids
     table = {
         'ATA': 'I', 'ATC': 'I', 'ATT': 'I', 'ATG': 'M',
         'ACA': 'T', 'ACC': 'T', 'ACG': 'T', 'ACT': 'T',
@@ -108,14 +137,18 @@ def translate(rna_seq, reading_frame):
     }
     protein_final = ""
     protein = ""
+    # methionine flag, should start read only after M
     met_flag = False
-
+    # read 3 bases every time, 3 bases = codon
     for i in range(0, len(reading), 3):
         codon = table[reading[i:i + 3]]
+        # flag change
         if codon == 'M':
             met_flag = True
         if met_flag:
+            # address option of stop codon
             if codon == '_':
+                # we want to return longest read
                 if len(protein_final) < len(protein):
                     protein_final = protein
                     protein = ""
