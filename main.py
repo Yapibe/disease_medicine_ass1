@@ -1,24 +1,41 @@
 import sys
 
 
-def find_srr(sequence):
-    list_of_subs = find_all_subs(sequence)
+def find_srr(dna_sequence):
+    """
+    function receives a dna sequence (str), and prints a list of tuple
+    containing the repeat sequence (str) and amount of repeats (int)
+    :param dna_sequence:
+    :return:
+    """
+    # receive list of all sub elements in the string
+    list_of_subs = find_all_subs(dna_sequence)
+    # create list of tuples containing substring and amount of repeat
     list_of_repeat = []
+    # send each substring to the max_repeating function
     for sub in list_of_subs:
-        value = max_repeating(sequence, sub)
+        value = max_repeating(dna_sequence, sub)
         if value >= 3:
             list_of_repeat.append((sub, value))
+    lst = len(list_of_repeat)
+    for i in range(0, lst):
+        for j in range(0, lst - i - 1):
+            if list_of_repeat[j][1] > list_of_repeat[j + 1][1]:
+                temp = list_of_repeat[j]
+                list_of_repeat[j] = list_of_repeat[j + 1]
+                list_of_repeat[j + 1] = temp
+    if not list_of_repeat:
+        return None
+    return list_of_repeat
 
-    print(list_of_repeat)
 
-
-def find_all_subs(sequence):
+def find_all_subs(dna_sequence):
     lookup = []
-    n = len(sequence)
+    n = len(dna_sequence)
     for i in range(1, 6):
         for j in range(i, n + 1):
-            if sequence[j - i:j] not in lookup:
-                lookup.append(sequence[j - i:j])
+            if dna_sequence[j - i:j] not in lookup:
+                lookup.append(dna_sequence[j - i:j])
     return lookup
 
 
@@ -39,34 +56,33 @@ def max_repeating(sequence, sub_string):
 
 
 def reverse_transcribe(rna_seq):
-    translate(rna_seq, 2)
     dna_seq = []
-    for char in rna_seq.upper():
-        if char == 'A':
+    for base in rna_seq.upper():
+        if base == 'A':
             dna_seq.append('T')
-        elif char == 'U':
+        elif base == 'U':
             dna_seq.append('A')
-        elif char == 'G':
+        elif base == 'G':
             dna_seq.append('C')
-        elif char == 'C':
+        elif base == 'C':
             dna_seq.append('G')
     dna_seq.reverse()
     dna_seq_comp = ""
     for char in dna_seq:
         dna_seq_comp += char
-    print(dna_seq_comp)
+    return dna_seq_comp
 
 
 def translate(rna_seq, reading_frame):
     dna_seq = []
-    for char in rna_seq.upper():
-        if char == 'U':
+    for base in rna_seq.upper():
+        if base == 'U':
             dna_seq.append('T')
         else:
-            dna_seq.append(char)
+            dna_seq.append(base)
     rna_seq_t = ""
-    for char in dna_seq:
-        rna_seq_t += char
+    for base in dna_seq:
+        rna_seq_t += base
     reading = rna_seq_t[reading_frame - 1:]
     if len(reading) % 3 == 1:
         reading = reading[:-1]
@@ -106,7 +122,35 @@ def translate(rna_seq, reading_frame):
                 met_flag = False
             else:
                 protein += codon
-    print(protein_final)
+    if len(protein_final) < len(protein):
+        protein_final = protein
+    if not protein_final:
+        return None
+    else:
+        return protein_final
 
 
-reverse_transcribe(sys.argv[1])
+if __name__ == '__main__':
+
+    srr_list = find_srr(sys.argv[1])
+    if srr_list:
+        for srr in srr_list[:-1]:
+            print(f'{srr[0]},{srr[1]}', end=";")
+        print(f'{srr_list[-1][0]},{srr_list[-1][1]}')
+    else:
+        print('No simple repeats in DNA sequence')
+
+    reversed_transcribed = reverse_transcribe(sys.argv[2])
+    print("DNA sequence:", reversed_transcribed)
+
+    protein = translate(sys.argv[3], int(sys.argv[4]))
+    if protein:
+        print("Translation: ", end="")
+        for char in protein[:-1]:
+            print(char, end=";")
+        print(protein[-1:])
+    else:
+        print("Non-coding RNA")
+
+
+
