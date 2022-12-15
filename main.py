@@ -1,44 +1,27 @@
 import sys
+import csv
 
-
-# if __name__ == '__main__':
-#
-#     srr_list = find_srr(sys.argv[1])
-#     if srr_list:
-#         for srr in srr_list[:-1]:
-#             print(f'{srr[0]},{srr[1]}', end=";")
-#         print(f'{srr_list[-1][0]},{srr_list[-1][1]}')
-#     else:
-#         print('No simple repeats in DNA sequence')
-#
-#     reversed_transcribed = reverse_transcribe(sys.argv[2])
-#     print("DNA sequence:", reversed_transcribed)
-#
-#     protein = translate(sys.argv[3], int(sys.argv[4]))
-#     if protein:
-#         print("Translation: ", end="")
-#         for char in protein[:-1]:
-#             print(char, end=";")
-#         print(protein[-1:])
-#     else:
-#         print("Non-coding RNA")
 
 # Create cell class
 class Cell:
     """
-    Cell class represents a cell in a cell division process
+    Cell class, represents a cell in the body
     :param name: name of the cell (str)
     :param genome: genome of the cell (list(str))
     :param reading_frame: reading frame of the cell (list(int))
     """
 
     def __init__(self, name, genome, reading_frame):
+
         self.name = name
         self.genome = genome
         self.reading_frame = reading_frame
 
     def __str__(self):
-        return f'<{self.name}, {self.genome}>'
+        """
+        :print: string representation of the cell and its genome
+        """
+        print(f'<{self.name}, {self.genome}>')
 
     def index_loop(self, index):
         """
@@ -57,13 +40,13 @@ class Cell:
 
         dna_sequence = self.genome[self.index_loop(genome_index)]
         # receive list of all sub elements in the string
-        list_of_subs = self.find_all_subs(dna_sequence)
+        list_of_subs = self.__find_all_subs(dna_sequence)
         # create list of tuples containing substring and amount of repeat
         list_of_repeat = []
         # send each substring to the max_repeating function
         for sub in list_of_subs:
             # value is the max value of repeated element
-            value = self.max_repeating(dna_sequence, sub)
+            value = self.__max_repeating(dna_sequence, sub)
             # only take value above 3
             if value >= 3:
                 list_of_repeat.append((sub, value))
@@ -187,52 +170,138 @@ class Cell:
 
     def repertoire(self):
         # return list of tuples of the form [(find_ssr(genome_index), transcribe(genome_index)]
-        return [(self.find_ssr(i), self.transcribe(i)) for i in range(len(self.genome))]
+        return [(self.find_srr(i), self.translate(i)) for i in range(len(self.genome))]
 
 
-# class NerveCell(Cell):
-#     """
-#     NerveCell class
-#     """
-#
-#     def __init__(self, genome, reading_frame, StemCell):
-#         """
-#         :param genome: list of strings
-#         :param reading_frame: list of ints
-#         """
-#         StemCell.__init__(genome, reading_frame)
-#         self.coefficient
-#         self.StemCell = StemCell
-#
-#     def __str__(self):
-#         return "NerveCell"
-#
-#     def receive(self, strength):
-#         pass
-#
-#     def send(self, strength):
-#         pass
+class StemCell(Cell):
+    """
+    StemCell class
+    """
+
+    def __init__(self, name, genome, reading_frame):
+        """
+        :param genome: list of strings
+        :param reading_frame: list of ints
+        """
+        super().__init__(name, genome, reading_frame)
+
+    # multiply function that given an int, returns a list of deepcopy of self without external libraries
+    def __mul__(self, n):
+        """
+        :param n: int
+        :return: list of deepcopy of self
+        """
+        # create list that will contain copies of self where the first element is self
+        copies = [self]
+        # iterate n-1 times
+        for i in range(n - 1):
+            # append copy of self to copies
+            copies.append(type(self)(**vars(self)))
+        return copies
+
+    # mitosis function that returns a list of two stem cells one that is self and the other is a deepcopy of self
+    def mitosis(self):
+        """
+        :return: list of two stem cells one that is self and the other is a deepcopy of self
+        """
+        return [self, type(self)(**vars(self))]
+
+    # differentiate function that returns a new cell of type cell_type and parameters args
+    def differentiate(self, cell_type, args):
+        if cell_type == "NC":
+            return NerveCell(self, args)
+        elif cell_type == "MC":
+            return MuscleCell(self, *args)
 
 
-# class StemCell(Cell):
-#     """
-#     StemCell class
-#     """
-#
-#     def __init__(self, genome, reading_frame):
-#         """
-#         :param genome: list of strings
-#         :param reading_frame: list of ints
-#         """
-#         super().__init__(genome, reading_frame)
-#         self.name = "StemCell"
-#
-#
-#     def __str__(self):
-#         return self.name
-#
-#     def differentiate(self):
-#         """
-#         :return: NerveCell object
-#         """
-#         return NerveCell(self.genome, self.reading_frame, self)
+class NerveCell(Cell):
+    """
+    NerveCell class
+    """
+
+    def __init__(self, origin_cell: StemCell, args):
+        super().__init__("NerveCell", origin_cell.genome, origin_cell.reading_frame)
+        self.signal = None
+        self.coef = args
+
+    def receive(self, strength):
+        """
+        :param strength: int
+        :return: int
+        """
+        self.signal = strength * self.coef
+
+    def send(self):
+        """
+        :return: int
+        """
+        return self.signal
+
+
+class MuscleCell(Cell):
+    """
+    MuscleCell class
+    """
+
+    def __init__(self, origin_cell: StemCell, args):
+        super().__init__("MuscleCell", origin_cell.genome, origin_cell.reading_frame)
+        list_args = args.split(',')
+        self.file = list_args[0]
+        self.threshold = list_args[1]
+
+    def receive(self, strength):
+        if strength > self.threshold:
+            # write to file
+            with open(self.file, "w") as f:
+                f.write(str(strength) + "I like to move it\n")
+
+
+class NerveNetwork:
+
+    def __init__(self, nerve_list, musclecell):
+        self.nerve_list = nerve_list
+        self.muscle = musclecell
+
+    def send_signal(self, strength):
+        # iterate over nerve_list and send strength to each nerve cell
+        for nerve in self.nerve_list:
+            nerve.receive(strength)
+            strength = nerve.send()
+
+        self.muscle.receive(strength)
+
+
+if __name__ == '__main__':
+    # receive argv from command line where argv[1] is the file name and argv[2] is list of strength
+    argv = sys.argv
+    list_signal = argv[2].split(",")
+    list_of_nerve = []
+    muscle = None
+
+    # Open the TSB file
+    with open(argv[1], 'r') as tsb_file:
+        # Create a DictReader object
+        tsb_reader = csv.DictReader(tsb_file, delimiter='\t')
+
+        # Iterate over the rows in the TSB file
+        for row in tsb_reader:
+            # Create a new cell
+            stemy = StemCell("StemCell", row['DNA'].split(), [int(i) for i in row['reading_frames'].split(',')])
+            if row['type'] == 'NC':
+                nerve1, nerve2 = stemy.mitosis()
+                nerve1.differentiate("NC", row['parameter'])
+                nerve2.differentiate("NC", row['parameter'])
+                list_of_nerve.append(nerve1)
+                list_of_nerve.append(nerve2)
+            else:
+                muscle = stemy.differentiate("MC", row['parameter'])
+
+    # create a nerve network
+    nerve_network = NerveNetwork(list_of_nerve, muscle)
+    for signal in list_signal:
+        nerve_network.send_signal(int(signal))
+        print(muscle.repertoire())
+
+
+
+
