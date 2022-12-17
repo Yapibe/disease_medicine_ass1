@@ -1,3 +1,4 @@
+# Yair Pickholz Berliner 205435357
 import sys
 import csv
 
@@ -12,7 +13,6 @@ class Cell:
     """
 
     def __init__(self, name, genome, reading_frame):
-
         self.name = name
         self.genome = genome
         self.reading_frame = reading_frame
@@ -21,7 +21,8 @@ class Cell:
         """
         :print: string representation of the cell and its genome
         """
-        print(f'<{self.name}, {self.genome}>')
+        # print <name> <genome>, and the genome is separated by " "
+        print(f'<{self.name}, {" ".join(self.genome)}>')
 
     def index_loop(self, index):
         """
@@ -103,20 +104,20 @@ class Cell:
         :param genome_index:
         :return:
         """
+        # genome index after loop
         dna_sequence = self.genome[self.index_loop(genome_index)]
         dic = {'A': 'U', 'T': 'A', 'C': 'G', 'G': 'C'}
-        for base in dna_sequence:
-            temp = ''.join([dic[base] for base in dna_sequence])
+        temp = ''.join([dic[base] for base in dna_sequence])
         # reverse the string
         reverse_seq = temp[::-1]
-
+        # make sure uppercase
         return reverse_seq.upper()
 
     # translate function that receives a genome_index and returns the protein sequence
     def translate(self, genome_index):
         """
         :param genome_index:
-        :return:
+        :return: protein sequence (str)
         """
         index = self.index_loop(genome_index)
         rna_sequence = self.transcribe(index)[self.reading_frame[index] - 1:]
@@ -173,6 +174,9 @@ class Cell:
             return protein_final
 
     def print_genome(self):
+        """
+        prints the genome
+        """
         for i in range(len(self.genome)):
             srr_list = self.find_srr(i)
             if srr_list:
@@ -191,7 +195,7 @@ class Cell:
                 print("Non-coding RNA")
 
     def repertoire(self):
-        # return list of tuples of the form [(find_ssr(genome_index), transcribe(genome_index)]
+        # return for each genome a tuple, the find_srr function and translate function for that genome index
         return [(self.find_srr(i), self.translate(i)) for i in range(len(self.genome))]
 
 
@@ -258,7 +262,7 @@ class StemCell(Cell):
                     if strength > self.threshold:
                         # write to file
                         with open(self.file, "a+") as f:
-                            f.write(str(strength) + "I like to move it\n")
+                            f.write(str(strength) + ", I like to move it\n")
 
             celly = MuscleCell(self, cell_param[0], float(cell_param[1]))
         return celly
@@ -292,6 +296,24 @@ if __name__ == '__main__':
 
         # Iterate over the rows in the TSB file
         for row in tsb_reader:
+            # assert that cell type is either NerveCell or MuscleCell
+            assert row['type'] in ["NC", "MC"], "File illegal"
+            # assert that DNA sequence is valid
+            assert all([char in "ACGT" for char in row['DNA'].replace(",", "").upper()]), "File illegal"
+            # assert that reading frame is string of ints seperated by ","
+            assert all([int(char) in [1, 2, 3] for char in row['reading_frames'].replace(",", "")]), "File illegal"
+            # assert that number of dna is the same as reading frame
+            assert len(row['DNA'].split(",")) == len(row['reading_frames'].split(",")), "File illegal"
+            # assert that parameters are valid
+            param_assert = row['parameter'].split(",")
+            if row['type'] == "NC":
+                assert len(param_assert) == 1, "File illegal"
+                assert float(param_assert[0]) > 0, "File illegal"
+            elif row['type'] == "MC":
+                assert len(param_assert) == 2, "File illegal"
+                assert float(param_assert[1]) > 0, "File illegal"
+                assert param_assert[0].endswith(".txt"), "File illegal"
+
             # Create a new cell
             stemy = StemCell("StemCell", row['DNA'].split(","), [int(i) for i in row['reading_frames'].split(',')])
             if row['type'] == 'NC':
