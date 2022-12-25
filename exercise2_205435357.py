@@ -261,10 +261,10 @@ class StemCell(Cell):
                     if strength > self.threshold:
                         # write to file
                         # check if output file exists, if not create it, if it does, delete it and then create it
-                        if sys.path.exists("output.txt"):
-                            sys.unlink("output.txt")
-                        else:
-                            pass
+                        # if sys.path.exists("output.txt"):
+                        #     sys.unlink("output.txt")
+                        # else:
+                        #     pass
                         with open(self.file, "a+") as f:
                             f.write(str(strength) + ", I like to move it\n")
                             f.close
